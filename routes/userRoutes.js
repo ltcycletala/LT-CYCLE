@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 
 import User from "../models/userModels.js";
 import ClassPackage from "../models/classPackage.js";
+import ClassSchedule from "../models/classSchedule.js";
 
 import generateJWT from "../helpers/generateJWT.js";
 
@@ -91,9 +92,9 @@ userRouter.post("/register", async (req, res) => {
     newUser.token =
       Math.random().toString(32).substring(2) + Date.now().toString(32);
     await newUser.save();
-	
+
     //enviando el correo
-    
+
     const info = await transport.sendMail({
       from: "Cycle Indoors Studio <ltcycleindoorstudio@ltcycle.mx>",
       to: email,
@@ -107,7 +108,7 @@ userRouter.post("/register", async (req, res) => {
             <p> Si tu no creates esta cuenta, puedes ignorar el mensaje </p>
             `,
     });
-	console.log("holaaaaaaaaaaaaaaa");
+    console.log("holaaaaaaaaaaaaaaa");
     console.log(info);
 
     res.json({
@@ -271,6 +272,121 @@ userRouter.post("/contacto", async (req, res) => {
     res.json({ message: "Correo Electronico Enviado Exitosamente" });
   } catch (error) {
     console.log(error);
+  }
+});
+
+// userRouter.get("/user-history", isAuth, async (req, res) => {
+//   try {
+//     // Obtén el userId del usuario loggeado (esto podría ser a través de un token o req.user dependiendo de cómo manejas la autenticación)
+//     const userId = req.user._id; // Ejemplo: utilizando req.user si ya tienes autenticación implementada
+//     console.log(userId);
+//     // Busca todos los ClassSchedule donde el userId esté en el array "bicis"
+//     const userClasses = await ClassSchedule.find({
+//       bicis: { $elemMatch: { userId: userId } },
+//     }).populate("instructorInfo");
+
+//     res.json(userClasses);
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// });
+
+userRouter.get("/user-history", isAuth, async (req, res) => {
+  try {
+    // Obtén el userId del usuario loggeado
+    const userId = req.user._id; // Suponiendo que tienes el userId en req.user
+
+    // Busca todas las clases donde el userId esté en el array "bicis"
+    const userClasses = await ClassSchedule.find({
+      bicis: { $elemMatch: { userId: userId } },
+    }).populate("instructorInfo");
+
+    // Filtra el array "bicis" para que solo incluya la bici del usuario loggeado
+    const filteredClasses = userClasses.map((classSchedule) => {
+      // Filtrar las bicis para que solo incluya la del usuario loggeado
+      const userBicis = classSchedule.bicis.filter(
+        (bici) => bici.userId.toString() == userId.toString()
+      );
+      return {
+        ...classSchedule._doc, // Traer el resto de los datos del documento
+        bicis: userBicis, // Solo incluir la bici del usuario loggeado
+      };
+    });
+
+    res.json(filteredClasses);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Endpoint para cancelar una clase
+// userRouter.delete("/cancel-class/:id", isAuth, async (req, res) => {
+//   const classId = req.params.id; // ID de la clase a cancelar
+//   const userId = req.user._id; // Suponiendo que tienes el userId del usuario logueado en req.user
+
+//   try {
+//     // Busca la clase por su ID
+//     const classSchedule = await ClassSchedule.findById(classId);
+
+//     if (!classSchedule) {
+//       return res.status(404).json({ message: "Clase no encontrada" });
+//     }
+
+//     // Filtra el array de bicis para eliminar el userId
+//     classSchedule.bicis = classSchedule.bicis.filter(
+//       (bici) => bici.userId.toString() !== userId.toString()
+//     );
+
+//     // Guarda los cambios en la clase
+//     await classSchedule.save();
+
+//     return res.status(200).json({ message: "Clase cancelada exitosamente" });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ message: "Ocurrió un error al cancelar la clase" });
+//   }
+// });
+
+userRouter.delete("/cancel-class/:id", isAuth, async (req, res) => {
+  const classId = req.params.id; // ID de la clase a cancelar
+  const userId = req.user._id; // Suponiendo que tienes el userId del usuario logueado en req.user
+
+  try {
+    // Busca la clase por su ID
+    const classSchedule = await ClassSchedule.findById(classId);
+
+    if (!classSchedule) {
+      return res.status(404).json({ message: "Clase no encontrada" });
+    }
+
+    // Filtra el array de bicis para eliminar el userId
+    classSchedule.bicis = classSchedule.bicis.filter(
+      (bici) => bici.userId.toString() !== userId.toString()
+    );
+
+    // Guarda los cambios en la clase
+    await classSchedule.save();
+
+    // Actualiza la cantidad de clases en el usuario
+    // Aqui se retorna el credito ya que el usuario cancela una clase 
+    const historyNumber = { ...req.user.tusClases };
+    historyNumber.classQuantity += 1;
+    req.user.tusClases = historyNumber;
+    
+    await req.user.save();
+
+    return res.status(200).json({
+      message: "Clase cancelada exitosamente, y se ha sumado un crédito.",
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Ocurrió un error al cancelar la clase" });
   }
 });
 

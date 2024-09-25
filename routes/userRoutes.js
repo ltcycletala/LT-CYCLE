@@ -244,8 +244,8 @@ userRouter.post("/contacto", async (req, res) => {
 
     //definde and put credential using nodemailer to send emails
     var transport = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
+      host: 'server223.web-hosting.com',
+      port: 465,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -254,8 +254,8 @@ userRouter.post("/contacto", async (req, res) => {
 
     //enviando el correo
     const info = await transport.sendMail({
-      from: "Cycle Indoors Studio <fravelar@gmail.com>",
-      to: email,
+      from: "Cycle Indoors Studio <ltcycleindoorstudio@ltcycle.mx>",
+      to: 'ltcycleindoorstudio@ltcycle.mx',
       subject: "Contactando",
       text: "Contactando",
       html: `
@@ -268,6 +268,7 @@ userRouter.post("/contacto", async (req, res) => {
 			<textarea name="comentarios" rows="4" cols="50">${comment}</textarea>
 			`,
     });
+    console.log(info, 'aquiii')
 
     res.json({ message: "Correo Electronico Enviado Exitosamente" });
   } catch (error) {

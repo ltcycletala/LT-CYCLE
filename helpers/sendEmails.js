@@ -22,14 +22,14 @@ const emailForgotPassword = async (email, name, token) => {
     //   });
 
     const info = await transport.sendMail({
-      from: "LT Cycle<antdev1987@gmail.com>",
+      from: "Cycle Indoors Studio <ltcycleindoorstudio@ltcycle.mx>",
       to: email,
       subject: "Reset Password",
-      text: "Cambia el Password de tu Cuenta en aquiestato Ecommerce",
+      text: "Cambia el Password de tu Cuenta en Cycle Indoors Studio",
       html: `
 					<p> Hola: ${name} aqui podras cambiar tu password </p>
 		
-					<a href='${process.env.URL_VERIFIED_EMAIL_FRONTEND_LOCAL}cambiar-contrasena/${token}'>Click aqui para cambiar Password</a>
+					<a href='${process.env.URL_VERIFIED_EMAIL_FRONTEND}cambiar-contrasena/${token}'>Click aqui para cambiar Password</a>
 					<p> Si tu no enviastes este email, puedes ignorar el mensaje </p>
 					`,
     });

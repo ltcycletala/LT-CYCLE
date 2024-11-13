@@ -421,13 +421,13 @@ userRouter.post("/forgotpassword", async (req, res) => {
       isUser.name,
       isUser.token
     );
+    console.log(emailResult, "resultado del envio");
+
     if (!emailResult) {
       return res.status(500).json({
         message: "Error interno del servidor al enviar el correo electrónico.",
       });
     }
-
-    console.log(emailResult);
 
     res.send({
       message:
@@ -446,7 +446,7 @@ userRouter.patch("/change-password/:tokenId", async (req, res) => {
 
   const { password } = req.body;
   const { tokenId } = req.params;
-  console.log(password, 'estoy dando aqa')
+  console.log(password, "estoy dando aqa");
 
   try {
     const isUser = await User.findOne({ token: tokenId });

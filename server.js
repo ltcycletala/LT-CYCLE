@@ -60,7 +60,7 @@ server.post('/api/checkout', async(req,res)=>{
 
 })
 
-
+console.log(process.env.EMAIL_HOST)
 const PORT = 9000 || process.env.PORT;
 server.listen(PORT, () => {
 	console.log("server running");

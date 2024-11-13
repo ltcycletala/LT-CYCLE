@@ -13,6 +13,7 @@ import {
   paqueteVigente,
   setExpirationDateInDays,
 } from "../helpers/checkexpirationDate.js";
+import { emailForgotPassword } from "../helpers/sendEmails.js";
 
 const userRouter = express.Router();
 
@@ -244,7 +245,7 @@ userRouter.post("/contacto", async (req, res) => {
 
     //definde and put credential using nodemailer to send emails
     var transport = nodemailer.createTransport({
-      host: 'server223.web-hosting.com',
+      host: "server223.web-hosting.com",
       port: 465,
       auth: {
         user: process.env.EMAIL_USER,
@@ -255,7 +256,7 @@ userRouter.post("/contacto", async (req, res) => {
     //enviando el correo
     const info = await transport.sendMail({
       from: "Cycle Indoors Studio <ltcycleindoorstudio@ltcycle.mx>",
-      to: 'ltcycleindoorstudio@ltcycle.mx',
+      to: "ltcycleindoorstudio@ltcycle.mx",
       subject: "Contactando",
       text: "Contactando",
       html: `
@@ -268,7 +269,7 @@ userRouter.post("/contacto", async (req, res) => {
 			<textarea name="comentarios" rows="4" cols="50">${comment}</textarea>
 			`,
     });
-    console.log(info, 'aquiii')
+    console.log(info, "aquiii");
 
     res.json({ message: "Correo Electronico Enviado Exitosamente" });
   } catch (error) {
@@ -373,11 +374,11 @@ userRouter.delete("/cancel-class/:id", isAuth, async (req, res) => {
     await classSchedule.save();
 
     // Actualiza la cantidad de clases en el usuario
-    // Aqui se retorna el credito ya que el usuario cancela una clase 
+    // Aqui se retorna el credito ya que el usuario cancela una clase
     const historyNumber = { ...req.user.tusClases };
     historyNumber.classQuantity += 1;
     req.user.tusClases = historyNumber;
-    
+
     await req.user.save();
 
     return res.status(200).json({
@@ -388,6 +389,87 @@ userRouter.delete("/cancel-class/:id", isAuth, async (req, res) => {
     return res
       .status(500)
       .json({ message: "Ocurrió un error al cancelar la clase" });
+  }
+});
+
+/////////////// Forgot password email
+//this help to send email for forgot password
+userRouter.post("/forgotpassword", async (req, res) => {
+  console.log("in forgot pass route");
+  try {
+    const { email } = req.body;
+
+    const isUser = await User.findOne({ email });
+
+    if (!isUser) {
+      return res.status(404).send({ message: "User Does Not Exist" });
+    }
+
+    if (!isUser.isVerified) {
+      return res
+        .status(401)
+        .send({ message: "You need to verify your account first" });
+    }
+
+    isUser.token =
+      Math.random().toString(32).substring(2) + Date.now().toString(32);
+    await isUser.save();
+
+    // 6.
+    const emailResult = await emailForgotPassword(
+      email,
+      isUser.name,
+      isUser.token
+    );
+    if (!emailResult) {
+      return res.status(500).json({
+        message: "Error interno del servidor al enviar el correo electrónico.",
+      });
+    }
+
+    console.log(emailResult);
+
+    res.send({
+      message:
+        "Te hemos enviado un correo con instrucciones para cambiar tu password",
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+/** esta parte obtiene el nuevo password que se envia del frontend
+ * 	aqui se cambia el password al nuevo enviado del frontend
+ */
+userRouter.patch("/change-password/:tokenId", async (req, res) => {
+  console.log("in post the fotgotpassword/:tokenId");
+
+  const { password } = req.body;
+  const { tokenId } = req.params;
+  console.log(password, 'estoy dando aqa')
+
+  try {
+    const isUser = await User.findOne({ token: tokenId });
+
+    ///we check if we have any user with that token
+    if (!isUser) {
+      return res.status(404).send({ message: "token no valid" });
+    }
+
+    //then we check if your account has been verified if not we stop you here and require you to verify the account
+    if (!isUser.isVerified) {
+      return res
+        .status(400)
+        .send({ message: "Please verify your account first" });
+    }
+    console.log(isUser);
+    isUser.password = bcryptjs.hashSync(password);
+    isUser.token = "";
+    await isUser.save();
+
+    res.send({ message: "Password hass been changed correctly" });
+  } catch (error) {
+    console.log(error);
   }
 });
 

@@ -29,7 +29,7 @@ const emailForgotPassword = async (email, name, token) => {
       html: `
 					<p> Hola: ${name} aqui podras cambiar tu password </p>
 		
-					<a href='${process.env.URL_VERIFIED_EMAIL_FRONTEND}cambiar-contrasena/${token}'>Click aqui para cambiar Password</a>
+					<a href='${process.env.URL_VERIFIED_EMAIL_FRONTEND}/cambiar-contrasena/${token}'>Click aqui para cambiar Password</a>
 					<p> Si tu no enviastes este email, puedes ignorar el mensaje </p>
 					`,
     });

@@ -8,7 +8,7 @@ import ClassSchedule from "../models/classSchedule.js";
 
 import generateJWT from "../helpers/generateJWT.js";
 
-import { isAuth } from "../utils.js";
+import { isAdmin, isAuth } from "../utils.js";
 import {
   paqueteVigente,
   setExpirationDateInDays,
@@ -472,5 +472,70 @@ userRouter.patch("/change-password/:tokenId", async (req, res) => {
     console.log(error);
   }
 });
+
+
+
+
+/////////////// funcionalidades asignar clases a usuarios
+
+userRouter.get('/get-user-by-email/:emailAccount', isAuth, isAdmin, async(req,res)=>{
+  console.log('en get user by id just admin')
+
+  try {
+    const {emailAccount} = req.params
+    const isUser = await User.findOne({email:emailAccount})
+    if(!isUser){
+      return res.status(404).json({ message: "No se pudo econtrar usuario con ese email" });
+    }
+    const userResponse = {
+      id:isUser._id,
+      name:isUser.name,
+      email:isUser.email
+    }
+    res.json(userResponse)
+  } catch (error) {
+    console.log(error)
+  }
+
+} )
+
+
+userRouter.patch("/assign-class-package", isAuth, isAdmin, async (req, res) => {
+  console.log("en ruta de users pero en asignar paquete");
+
+  try {
+    //1, obtener la info del fronend
+    const { momentDateFrontEnd, idPackage, idUser } = req.body;
+
+    // console.log(momentDateFrontEnd, 'fecha del front')
+
+    //2. buscar la clase por id porque necesitamos su informacion
+    const isClass = await ClassPackage.findById(idPackage);
+
+    //3. buscamos el usuario que esta logeado asi podremos actualizar las clases que compre
+    const user = await User.findById(idUser);
+
+    //4. fijamos una fecha de expiracion a las clases primer parametro viene del frontend, el segundo es la duracion del paquete
+    const expiresIn = setExpirationDateInDays(
+      momentDateFrontEnd,
+      isClass.packageDuration
+    );
+
+    //5. construimos el bojecto que gardaremos en user,, cantidad de clases y la fecha en que expira
+    user.tusClases = {
+      expiresIn: expiresIn.fechaExpiracion,
+      classQuantity: user?.tusClases?.classQuantity
+        ? user.tusClases.classQuantity + isClass.packageQuantity
+        : isClass.packageQuantity,
+    };
+
+    await user.save();
+
+    res.json({ message: "saldo agregado" });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 
 export default userRouter;

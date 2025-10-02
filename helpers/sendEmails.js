@@ -6,14 +6,10 @@ const emailForgotPassword = async (email, name, token) => {
     var transport = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: process.env.EMAIL_PORT,
-      secure:false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-        tls: {
-    rejectUnauthorized: false, // <-- aquí va
-  },
     });
 
     // var transport = nodemailer.createTransport({
@@ -33,7 +29,7 @@ const emailForgotPassword = async (email, name, token) => {
       html: `
 					<p> Hola: ${name} aqui podras cambiar tu password </p>
 		
-					<a href='${process.env.URL_VERIFIED_EMAIL_FRONTEND_LOCAL}/cambiar-contrasena/${token}'>Click aqui para cambiar Password</a>
+					<a href='${process.env.URL_VERIFIED_EMAIL_FRONTEND}/cambiar-contrasena/${token}'>Click aqui para cambiar Password</a>
 					<p> Si tu no enviastes este email, puedes ignorar el mensaje </p>
 					`,
     });

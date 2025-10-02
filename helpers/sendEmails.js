@@ -11,6 +11,9 @@ const emailForgotPassword = async (email, name, token) => {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+        tls: {
+    rejectUnauthorized: false, // <-- aquí va
+  },
     });
 
     // var transport = nodemailer.createTransport({
